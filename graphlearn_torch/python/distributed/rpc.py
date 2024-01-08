@@ -249,9 +249,10 @@ def init_rpc(master_addr: str,
     if ctx is None:
       raise RuntimeError("'init_rpc': Distributed context has not been set.")
 
+    # NB: disable IB according to https://github.com/pytorch/pytorch/issues/86962
     options = rpc.TensorPipeRpcBackendOptions(
-      _transports=['ibv', 'uv'],
-      _channels=['mpt_uv', 'basic'],
+      _transports=["shm", "uv"],
+      _channels=["cma", "mpt_uv", "basic", "cuda_xth", "cuda_ipc", "cuda_basic"],
       num_worker_threads=num_rpc_threads,
       rpc_timeout=rpc_timeout,
       init_method=f'tcp://{master_addr}:{master_port}'
