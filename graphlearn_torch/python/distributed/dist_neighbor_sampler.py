@@ -17,6 +17,7 @@ import math
 import queue
 from dataclasses import dataclass
 from typing import List, Literal, Optional, Union, Tuple
+import time
 
 import torch
 
@@ -129,6 +130,7 @@ class DistNeighborSampler(ConcurrentEventLoop):
     self.channel = channel
     self.concurrency = concurrency
     self.device = get_available_device(device)
+    self.sample_time = 0
 
     if isinstance(data, DistDataset):
       partition2workers = rpc_sync_data_partitions(
@@ -253,7 +255,10 @@ class DistNeighborSampler(ConcurrentEventLoop):
     async_func,
     *args, **kwargs
   ) -> Optional[SampleMessage]:
+    start = time.time()
     sampler_output = await async_func(*args, **kwargs)
+    self.sample_time += time.time() - start
+    print(f"sample time: {self.sample_time}")
     res = await self._colloate_fn(sampler_output)
     if self.channel is None:
       return res
